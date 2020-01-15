@@ -84,6 +84,20 @@ namespace r2warsTorneo
             }
             return "{\"scores\":\"" + stats + "\",\"console\":\"" + actualCombatLog + "\"}";
         }
+         
+        void PrintStats()
+        {
+            Console.WriteLine("Write Stats To File: /home/niku/stats.txt");
+            string stats = "";
+            var standings = generator.GenerateRankings();
+            foreach (var standing in standings)
+            {
+                stats += string.Format("{0} {1} {2}<br>\n", standing.Rank.ToString(), teamNames[standing.Team.TeamId], standing.ScoreDescription);
+            }
+            System.IO.File.WriteAllText(@"/home/niku/stats.txt", stats);
+            Console.WriteLine(stats);
+        }
+
         private void CombatEnd(object sender, MyEvent e)
         {
             string ganador = e.winnername;
@@ -126,6 +140,7 @@ namespace r2warsTorneo
                 fullCombatLog += "Tournament end " + DateTime.Now + "\\n";
                 bTournamentRun = false;
                 string s = "{\"console\":\"" + fullCombatLog + "\"}";
+                PrintStats();
                 SendDrawEvent(s);
                 SendDrawEvent("on");
             }

@@ -384,6 +384,11 @@ namespace r2warsTorneo
                 int finrango = 0;
                 int addr = 0;
                 int lastlen = 0;
+
+                // TODO, get size of both bots, if one is too big
+
+                Console.WriteLine("\nInit Battle");
+                Console.WriteLine("Players = {0}", this.nPlayers);
                 for (int x = 0; x < this.nPlayers; x++)
                 {
                     file = files[x];
@@ -399,7 +404,7 @@ namespace r2warsTorneo
                     // seleccionamos la arch
                     this.r2[x].RunCommand(r2params);
                     //this.r2[x].RunCommand("e cfg.sandbox=true");
-                    //  this.r2[x].RunCommand("e asm.bytes=0");
+                    //this.r2[x].RunCommand("e asm.bytes=0");
                     this.r2[x].RunCommand("e scr.color=false");
                     this.r2[x].RunCommand("e asm.lines=false");
                     this.r2[x].RunCommand("e asm.flags=false");
@@ -437,10 +442,17 @@ namespace r2warsTorneo
                     Console.WriteLine(" Rasm size   = {0}", lenSource);
                     Console.WriteLine("=========================");
 
+                    // Trimm max length
+                    if(lenSource > 341) {
+                        Console.WriteLine("Bot exceeds 341 Bytes limit -> trim");
+                        lenSource = 341;
+                        src = src.Substring(0, 341*2);
+                    }
+
                     // calculamos donde poner el codigo en la arena
+                    // Wir berechnen, wo der Code in den Sand gelegt werden soll
                     List<Range<int>> intRanges = new List<Range<int>>();
-                    if (finrango == 0)
-                    {
+                    if (finrango == 0) {
                         finrango = 1024 - lenSource;
                         intRanges.Add(new Range<int>(0, finrango));
                         addr = rnd.NextFromRanges(intRanges);
@@ -516,6 +528,7 @@ namespace r2warsTorneo
             }
             return "NOK";
         }
+
         public bool ReiniciaGame(bool bNew)
         {
             //List<int> offsets = get_random_offsets(this.nPlayers);
@@ -628,6 +641,7 @@ namespace r2warsTorneo
                 uidx = 0;
             this.r2[this.uidx].RunCommand(players[this.uidx].user);
         }
+
         public void switchUser(int nuser)
         {
             if (nuser >= 0 && nuser <= players.Count)
@@ -772,6 +786,7 @@ namespace r2warsTorneo
             switchUser(nuser);
             return GetMemAccessRAW();
         }
+
         public Dictionary<int, int> GetMemAccessReadDict(string memaccess)
         {
             string[] ls = memaccess.Split('\n');
@@ -1005,6 +1020,7 @@ namespace r2warsTorneo
             players[thisplayer].actual.regs = regs1;
             return players[thisplayer].actual.dead;
         }
+
         public string formatregs(string regs)
         {
             string[] reg = regs.Split('\n');
