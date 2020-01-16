@@ -51,10 +51,12 @@ namespace r2warsTorneo
             });
             t.Wait();
         }
+        
         void SendDrawEvent(string str)
         {
             r2w.send_draw_event(str);
         }
+
         private void RoundEnd(object sender, MyEvent e)
         {
             int nround = e.round + 1;
@@ -65,6 +67,7 @@ namespace r2warsTorneo
             string s = "{\"console\":\"" + actualCombatLog + "\"}";
             SendDrawEvent(s);
         }
+
         private void RoundExhausted(object sender, MyEvent e)
         {
             int nround = e.round + 1;
@@ -73,6 +76,7 @@ namespace r2warsTorneo
             string s = "{\"console\":\"" + actualCombatLog + "\"}";
             SendDrawEvent(s);
         }
+
         string getstats()
         {
             string stats = string.Format("Combat {0} / {1}", ncombat, allcombats.Count) + "\\n\\n";
@@ -114,10 +118,16 @@ namespace r2warsTorneo
             else
                 bWaitToResumeTournament = true;
         }
+        
+        // run the next combat
         void runnextcombat()
         {
+            Console.WriteLine("runnextcombat");
+
+            Console.WriteLine("Combats count: {0}/{1}", ncombat, allcombats.Count);
             if (ncombat < allcombats.Count)
             {
+                Console.WriteLine("Step 1");
                 int j = 0;
                 foreach (var teamScore in allcombats[ncombat].TeamScores)
                 {
@@ -127,13 +137,38 @@ namespace r2warsTorneo
                     actualcombatscore[j].Score += new HighestPointsScore(0);
                     j++;
                 }
-                string tmp = string.Format("Combat initialized {0} {1} vs {2}", ncombat + 1, actualcombatnames[0], actualcombatnames[1]);
+
+                Console.WriteLine("Step 2");
+                j = 0;
+                foreach (var teamScore in allcombats[ncombat+2].TeamScores)
+                {
+                    actualcombatnames[j] = teamNames[teamScore.Team.TeamId];
+                    actualcombatwarriors[j] = teamWarriors[teamScore.Team.TeamId];
+                    actualcombatscore[j] = teamScore;
+                    actualcombatscore[j].Score += new HighestPointsScore(0);
+                    j++;
+                }
+
+                Console.WriteLine("Step 3");
+                string tmp = "Figthing Pool\n";
+                for( int i = 0; i < actualcombatnames.Length; i++ ) {
+                    tmp += string.Format("Names: {0}\n", actualcombatnames[i]);
+                }
+                Console.WriteLine(tmp);
+
+                tmp = string.Format("Combat initialized {0} {1} vs {2}", ncombat + 1, actualcombatnames[0], actualcombatnames[1]);
+
                 actualCombatLog = tmp + "\\n";
                 fullCombatLog += tmp + "\\n";
                 bCombatEnd = false;
                 string s = "{\"console\":\"" + actualCombatLog + "\"}";
                 SendDrawEvent(s);
-                r2w.playcombat(actualcombatwarriors[0], actualcombatwarriors[1], actualcombatnames[0], actualcombatnames[1], false);
+
+                // give back a list of players which will figth against each other
+                // r2w.playcombat(actualcombatwarriors[0], actualcombatwarriors[1], actualcombatnames[0], actualcombatnames[1], false);
+
+                r2w.playcombatEach(actualcombatwarriors, actualcombatnames, false);
+                
             }
             else
             {
@@ -145,6 +180,7 @@ namespace r2warsTorneo
                 SendDrawEvent("on");
             }
         }
+
         public void StopTournament()
         {
             while (bTournamenTask == true)
@@ -155,6 +191,7 @@ namespace r2warsTorneo
             }
             r2w.StopCombate();
         }
+
         public string getemptymemory()
         {
             string res = "";
@@ -163,6 +200,8 @@ namespace r2warsTorneo
             res = res.Remove(res.Length - 1);
             return res;
         }
+
+        // generate battle pairs, and store in "allcombats"
         private void dopairs(string[] selectedfiles, string strarch, string extension)
         {
             allcombats.Clear();
@@ -221,6 +260,7 @@ namespace r2warsTorneo
             SendDrawEvent(envio.Replace("\n", "\\n").Replace("\r", ""));
 
         }
+
         public void LoadTournamentPlayers()
         {
             StopTournament();
@@ -256,10 +296,12 @@ namespace r2warsTorneo
                 dopairs(selectedfiles, strarch, extension);
             }  
         }
+
         public void StopActualCombat()
         {
             r2w.StopCombate();
         }
+
         public void StepTournamentCombats()
         {
             if (bWaitToResumeTournament)
@@ -278,6 +320,7 @@ namespace r2warsTorneo
                 r2w.stepCombate();
             }
         }
+
         public void RunTournamentCombats()
         {
             if (bWaitToResumeTournament)

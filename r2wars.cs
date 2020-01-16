@@ -126,6 +126,7 @@ namespace r2warsTorneo
             send_draw_event(json_output());
 
         }
+
         void pinta(int offset, string c)
         {
             lock (memoria)
@@ -134,6 +135,7 @@ namespace r2warsTorneo
                     memoria[offset] = "\"" + c + "\"";
             }
         }
+
         void pinta(int offset, int count, string c)
         {
             lock (memoria)
@@ -145,9 +147,11 @@ namespace r2warsTorneo
                       //  Console.WriteLine("Zascaaaaa");
             }
         }
+
         void drawplayerturn(int nplayer)
         {
         }
+
         void drawslogcreen(int nplayer, clsinfo actual)
         {
             lock (dd)
@@ -163,6 +167,7 @@ namespace r2warsTorneo
                 mm[nplayer] = actual.txtmemoria;
             }
         }
+
         string padlines(string t,int maxlen=54)
         {
             string b = "";
@@ -181,6 +186,7 @@ namespace r2warsTorneo
             }
             return b;
         }
+
         void drawPC(int nplayer)
         {
             long oldPC = Engine.players[nplayer].actual.oldpc;
@@ -195,6 +201,7 @@ namespace r2warsTorneo
                 pinta(aPC, pColor[nplayer], "X", Engine.players[nplayer].actual.pcsize);
             }
         }
+
         void drawscreen(int nplayer)
         {
             // seleccionamos el offset actual y lo pintamos invertido
@@ -215,8 +222,8 @@ namespace r2warsTorneo
             {
                 rr[nplayer] = Engine.players[nplayer].actual.formatregs();
             }
-          
         }
+
         void drawmemaccess(int nplayer)
         {
             Dictionary<int, int> dicMemRead = Engine.GetMemAccessReadDict(Engine.players[nplayer].actual.mem);
@@ -278,6 +285,7 @@ namespace r2warsTorneo
             }
         send_draw_event(json_output());
         }
+
         private void RoundExhausted()
         {
             Debug.WriteLine("RoundExhausted::Invoked.");
@@ -292,8 +300,8 @@ namespace r2warsTorneo
                 e3.winnername = "";
                 Event_roundExhausted(this, e3);
             }
-      
         }
+
         private void RoundEnd()
         {
             // notificamos fin del round
@@ -307,9 +315,9 @@ namespace r2warsTorneo
                 e2.ciclos = totalciclos;
                 e2.winnername = Engine.players[Engine.thisplayer].name;
                 Event_roundEnd(this, e2);
-            }
-          
+            } 
         }
+
         private void CombatEnd(bool empate=false)
         {
             Debug.WriteLine("CombatEnd::Invoked.");
@@ -345,6 +353,7 @@ namespace r2warsTorneo
             });
             t.Wait();
         }
+
         private void ExecuteRoundInstruction(bool bWait)
         {
             if (Engine.cyleszero())
@@ -383,6 +392,8 @@ namespace r2warsTorneo
                 espera(2, 1);
             Engine.switchUserIdx();
         }
+
+        // Spieler starten
         public bool iniciaJugadores(string rutaWarrior1, string rutaWarrior2, string nameWarrior1, string nameWarrior2)
         {
             initmemoria();
@@ -416,8 +427,33 @@ namespace r2warsTorneo
             }
             return false;
         }
+       
+        public bool iniciaJugadoresEach(string[] rutaWarrior, string[] nameWarrior)
+        {
+            initmemoria();
+            string res = Engine.Init(rutaWarrior, nameWarrior);
+            Console.WriteLine("RES = " + res);
+            if (res == "OK")
+            {
+                // seteamos el jugador 1, wir setzen den Spieler 1
+                Engine.switchUser(1);
+                pinta(Engine.GetAddressProgram(), Engine.GetSizeProgram(), "r");
+                // dibujamos la pantalla del jugador 1
+                drawscreen(1);//, Engine.players[1].actual.ins, Engine.players[1].actual.dasm, Engine.players[1].actual.regs, Engine.players[1].actual.ipc());
+                drawPC(1);
 
-
+                // seteamos el jugador 0, wir setzen den Spieler 0
+                Engine.switchUser(0);
+                pinta(Engine.GetAddressProgram(), Engine.GetSizeProgram(), "b");
+                // dibujamos la pantalla del jugador 0 
+                drawscreen(0);//, Engine.players[0].actual.ins, Engine.players[0].actual.dasm, Engine.players[0].actual.regs, Engine.players[0].actual.ipc());
+                drawPC(0);
+                // ponemos el marco en el jugador0
+                drawplayerturn(0);
+                return true;
+            }
+            return false;
+        }
 
         bool bResetArena = false;
         public void stepCombate()
@@ -487,6 +523,7 @@ namespace r2warsTorneo
                 }
             }
         }
+
         public void iniciaCombate()
         {
             gameLoopTask = Task.Factory.StartNew(() =>
@@ -583,6 +620,7 @@ namespace r2warsTorneo
                 Debug.WriteLine("gameLoopTask: Fin");
             });
         }
+
         public bool playcombat(string rutaWarrior1, string rutaWarrior2, string nameWarrior1, string nameWarrior2, bool bSingleRound)
         {
             if (iniciaJugadores(rutaWarrior1, rutaWarrior2, nameWarrior1, nameWarrior2))
@@ -606,6 +644,32 @@ namespace r2warsTorneo
             }
             return false;
         }
+
+        public bool playcombatEach(string[] rutaWarriors, string[] nameWarriors, bool bSingleRound)
+        {
+            if (iniciaJugadoresEach(rutaWarriors, nameWarriors))
+            {
+                // ejecutamos el combate
+                this.bInCombat = true;     // indicamos que estamos en un combate
+                this.bSingleRound = bSingleRound;   // indicamos que No queremos un unico round
+                                                    // Wir sagen, dass wir keine einzige Runde wollen
+                this.bStopProcess = false;
+                this.victorias[0] = 0;
+                this.victorias[1] = 0;
+                this.nRound = 0;
+                this.nExausted = 0;
+                this.bDead = false;
+                this.totalciclos = 0;
+                if (bStopAtRoundStart)
+                    send_draw_event(json_output());
+                else
+                    iniciaCombate();
+                
+                return true;
+            }
+            return false;
+        }
+
         public void StopCombate()
         {
             while (bThreadIni)
